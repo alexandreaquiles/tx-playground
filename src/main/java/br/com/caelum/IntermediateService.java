@@ -2,25 +2,24 @@ package br.com.caelum;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-
-import javax.persistence.PersistenceException;
 
 @Service
 public class IntermediateService {
 
     private static final Logger logger = LoggerFactory.getLogger(IntermediateService.class);
 
-    private final CategoryService categoryService;
+    private final CategoryRepository categoryRepository;
 
-    public IntermediateService(CategoryService categoryService) {
-        this.categoryService = categoryService;
+    public IntermediateService(CategoryRepository categoryRepository) {
+        this.categoryRepository = categoryRepository;
     }
 
     public void failToInsertExistingCategoryInAnotherTxWithShutUpCatch() {
         try {
-            categoryService.failToInsertExistingCategoryInAnotherTx();
-        } catch (PersistenceException ex) {
+            categoryRepository.failToInsertExistingCategoryInAnotherTx();
+        } catch (DataIntegrityViolationException ex) {
             // shutting up...
             logger.info("Exception {} shut up. Message was: {}", ex.getClass().getSimpleName(), ex.getMessage());
         }
@@ -28,8 +27,8 @@ public class IntermediateService {
 
     public void failToInsertExistingCategoryWithSameTxWithShutUpCatch() {
         try {
-            categoryService.failToInsertExistingCategoryWithSameTx();
-        } catch (PersistenceException ex) {
+            categoryRepository.failToInsertExistingCategoryWithSameTx();
+        } catch (DataIntegrityViolationException ex) {
             // shutting up...
             logger.info("Exception {} shut up. Message was: {}", ex.getClass().getSimpleName(), ex.getMessage());
         }

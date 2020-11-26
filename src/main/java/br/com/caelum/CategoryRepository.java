@@ -1,10 +1,8 @@
 package br.com.caelum;
 
-import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.TransactionDefinition;
+import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -13,17 +11,17 @@ import javax.annotation.PostConstruct;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceException;
 
-@Service
-public class CategoryService {
+@Repository
+public class CategoryRepository {
 
-    private static final Logger logger = LoggerFactory.getLogger(CategoryService.class);
+    private static final Logger logger = LoggerFactory.getLogger(CategoryRepository.class);
 
     public static final String EXISTING_CATEGORY_NAME = "Programming";
 
     private final EntityManager entityManager;
     private final TransactionTemplate transactionTemplate;
 
-    public CategoryService(EntityManager entityManager, TransactionTemplate transactionTemplate) {
+    public CategoryRepository(EntityManager entityManager, TransactionTemplate transactionTemplate) {
         this.entityManager = entityManager;
         this.transactionTemplate = transactionTemplate;
     }
@@ -66,7 +64,7 @@ public class CategoryService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = PersistenceException.class)
-    public  void failToInsertExistingCategoryInAnotherTxWithNoRollbackForPersistenceExceptionWithShutUpCatch() {
+    public  void failToInsertExistingCategoryInAnotherTxWithNoRollbackForPersistenceAndWithShutUpCatch() {
         try {
             failToInsertExistingCategory();
         } catch (PersistenceException ex) {

@@ -2,6 +2,7 @@ package br.com.caelum;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -9,7 +10,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.persistence.EntityManager;
-import javax.persistence.PersistenceException;
 
 @RestController
 public class CoursesController {
@@ -17,12 +17,12 @@ public class CoursesController {
     private static final Logger logger = LoggerFactory.getLogger(CoursesController.class);
 
     private final EntityManager entityManager;
-    private final CategoryService categoryService;
+    private final CategoryRepository categoryRepository;
     private final IntermediateService intermediateService;
 
-    public CoursesController(EntityManager entityManager, CategoryService categoryService, IntermediateService intermediateService) {
+    public CoursesController(EntityManager entityManager, CategoryRepository categoryRepository, IntermediateService intermediateService) {
         this.entityManager = entityManager;
-        this.categoryService = categoryService;
+        this.categoryRepository = categoryRepository;
         this.intermediateService = intermediateService;
     }
 
@@ -32,7 +32,7 @@ public class CoursesController {
         Course newCourse = new Course("Java", 40);
         Assert.isNull(newCourse.getId(), "Can't add a course that already has an id.");
         entityManager.persist(newCourse);
-        categoryService.failToInsertExistingCategoryWithSameTx();
+        categoryRepository.failToInsertExistingCategoryWithSameTx();
         return ResponseEntity.ok(newCourse);
     }
 
@@ -42,8 +42,8 @@ public class CoursesController {
         Course newCourse = new Course("Python", 40);
         entityManager.persist(newCourse);
         try {
-            categoryService.failToInsertExistingCategoryWithSameTx();
-        } catch (PersistenceException ex) {
+            categoryRepository.failToInsertExistingCategoryWithSameTx();
+        } catch (DataIntegrityViolationException ex) {
             // shutting up...
             logger.info("Exception {} shut up. Message was: {}", ex.getClass().getSimpleName(), ex.getMessage());
         }
@@ -56,8 +56,8 @@ public class CoursesController {
         Course newCourse = new Course("Go", 40);
         entityManager.persist(newCourse);
         try {
-            categoryService.failToInsertExistingCategoryInAnotherTx();
-        } catch (PersistenceException ex) {
+            categoryRepository.failToInsertExistingCategoryInAnotherTx();
+        } catch (DataIntegrityViolationException ex) {
             // shutting up...
             logger.info("Exception {} shut up. Message was: {}", ex.getClass().getSimpleName(), ex.getMessage());
         }
@@ -69,7 +69,7 @@ public class CoursesController {
     public ResponseEntity<Course> anotherTxWithShutUpCatchInside() {
         Course newCourse = new Course("Haskell", 160);
         entityManager.persist(newCourse);
-        categoryService.failToInsertExistingCategoryInAnotherTxWithShutUpCatch();
+        categoryRepository.failToInsertExistingCategoryInAnotherTxWithShutUpCatch();
         return ResponseEntity.ok(newCourse);
     }
 
@@ -78,36 +78,36 @@ public class CoursesController {
     public ResponseEntity<Course> anotherTxWithShutUpCatchInsideButInAnotherMethod() {
         Course newCourse = new Course("Lisp", 2600);
         entityManager.persist(newCourse);
-        categoryService.failToInsertExistingCategoryInAnotherTxWithShutUpCatchInAnotherMethod();
+        categoryRepository.failToInsertExistingCategoryInAnotherTxWithShutUpCatchInAnotherMethod();
         return ResponseEntity.ok(newCourse);
     }
 
     @Transactional
-    @GetMapping("/another-tx-with-shut-up-catch-and-no-rollback-for-persistence-exception-inside")
-    public ResponseEntity<Course> anotherTxWithShutUpCatchInsideWithNoRollbackForPersistenceException() {
+    @GetMapping("/another-tx-with-shut-up-catch-and-norollback-for-exception-inside")
+    public ResponseEntity<Course> anotherTxWithShutUpCatchInsideWithNoRollbackForException() {
         Course newCourse = new Course("JavaScript", 2);
         entityManager.persist(newCourse);
-        categoryService.failToInsertExistingCategoryInAnotherTxWithNoRollbackForPersistenceExceptionWithShutUpCatch();
+        categoryRepository.failToInsertExistingCategoryInAnotherTxWithNoRollbackForPersistenceAndWithShutUpCatch();
         return ResponseEntity.ok(newCourse);
     }
 
-    @Transactional(noRollbackFor = PersistenceException.class)
-    @GetMapping("/another-tx-with-shut-up-catch-inside-but-with-no-rollback-for-persistence-exception-outside")
-    public ResponseEntity<Course> a() {
+    @Transactional(noRollbackFor = DataIntegrityViolationException.class)
+    @GetMapping("/another-tx-with-shut-up-catch-inside-but-with-norollback-for-exception-outside")
+    public ResponseEntity<Course> anotherTxWithShutUpCatchInsideButWithNoRollbackForExceptionOutside() {
         Course newCourse = new Course("Rust", 3200);
         entityManager.persist(newCourse);
-        categoryService.failToInsertExistingCategoryInAnotherTxWithShutUpCatch();
+        categoryRepository.failToInsertExistingCategoryInAnotherTxWithShutUpCatch();
         return ResponseEntity.ok(newCourse);
     }
 
-    @Transactional(noRollbackFor = PersistenceException.class)
-    @GetMapping("/another-tx-with-shut-up-catch-and-no-rollback-for-persistence-exception-outside")
-    public ResponseEntity<Course> b() {
+    @Transactional(noRollbackFor = DataIntegrityViolationException.class)
+    @GetMapping("/another-tx-with-shut-up-catch-and-norollback-for-exception-outside")
+    public ResponseEntity<Course> anotherTxWithShutUpCatchAndNoRollbackForExceptionOutside() {
         Course newCourse = new Course("Fortran", 80);
         entityManager.persist(newCourse);
         try {
-            categoryService.failToInsertExistingCategoryInAnotherTx();
-        } catch (PersistenceException ex) {
+            categoryRepository.failToInsertExistingCategoryInAnotherTx();
+        } catch (DataIntegrityViolationException ex) {
             // shutting up...
             logger.info("Exception {} shut up. Message was: {}", ex.getClass().getSimpleName(), ex.getMessage());
         }
