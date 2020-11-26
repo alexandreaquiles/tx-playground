@@ -18,10 +18,12 @@ public class CoursesController {
 
     private final EntityManager entityManager;
     private final CategoryService categoryService;
+    private final IntermediateService intermediateService;
 
-    public CoursesController(EntityManager entityManager, CategoryService categoryService) {
+    public CoursesController(EntityManager entityManager, CategoryService categoryService, IntermediateService intermediateService) {
         this.entityManager = entityManager;
         this.categoryService = categoryService;
+        this.intermediateService = intermediateService;
     }
 
     @Transactional
@@ -59,6 +61,74 @@ public class CoursesController {
             // shutting up...
             logger.info("Exception {} shut up. Message was: {}", ex.getClass().getSimpleName(), ex.getMessage());
         }
+        return ResponseEntity.ok(newCourse);
+    }
+
+    @Transactional
+    @GetMapping("/another-tx-with-shut-up-catch-inside")
+    public ResponseEntity<Course> anotherTxWithShutUpCatchInside() {
+        Course newCourse = new Course("Haskell", 160);
+        entityManager.persist(newCourse);
+        categoryService.failToInsertExistingCategoryInAnotherTxWithShutUpCatch();
+        return ResponseEntity.ok(newCourse);
+    }
+
+    @Transactional
+    @GetMapping("/another-tx-with-shut-up-catch-inside-but-in-another-method")
+    public ResponseEntity<Course> anotherTxWithShutUpCatchInsideButInAnotherMethod() {
+        Course newCourse = new Course("Lisp", 2600);
+        entityManager.persist(newCourse);
+        categoryService.failToInsertExistingCategoryInAnotherTxWithShutUpCatchInAnotherMethod();
+        return ResponseEntity.ok(newCourse);
+    }
+
+    @Transactional
+    @GetMapping("/another-tx-with-shut-up-catch-and-no-rollback-for-persistence-exception-inside")
+    public ResponseEntity<Course> anotherTxWithShutUpCatchInsideWithNoRollbackForPersistenceException() {
+        Course newCourse = new Course("JavaScript", 2);
+        entityManager.persist(newCourse);
+        categoryService.failToInsertExistingCategoryInAnotherTxWithNoRollbackForPersistenceExceptionWithShutUpCatch();
+        return ResponseEntity.ok(newCourse);
+    }
+
+    @Transactional(noRollbackFor = PersistenceException.class)
+    @GetMapping("/another-tx-with-shut-up-catch-inside-but-with-no-rollback-for-persistence-exception-outside")
+    public ResponseEntity<Course> a() {
+        Course newCourse = new Course("Rust", 3200);
+        entityManager.persist(newCourse);
+        categoryService.failToInsertExistingCategoryInAnotherTxWithShutUpCatch();
+        return ResponseEntity.ok(newCourse);
+    }
+
+    @Transactional(noRollbackFor = PersistenceException.class)
+    @GetMapping("/another-tx-with-shut-up-catch-and-no-rollback-for-persistence-exception-outside")
+    public ResponseEntity<Course> b() {
+        Course newCourse = new Course("Fortran", 80);
+        entityManager.persist(newCourse);
+        try {
+            categoryService.failToInsertExistingCategoryInAnotherTx();
+        } catch (PersistenceException ex) {
+            // shutting up...
+            logger.info("Exception {} shut up. Message was: {}", ex.getClass().getSimpleName(), ex.getMessage());
+        }
+        return ResponseEntity.ok(newCourse);
+    }
+
+    @Transactional
+    @GetMapping("/another-tx-with-shut-up-catch-in-intermediate-service")
+    public ResponseEntity<Course> anotherTxWithShutUpCatchInIntermediateService() {
+        Course newCourse = new Course("Verilog", 9000);
+        entityManager.persist(newCourse);
+        intermediateService.failToInsertExistingCategoryInAnotherTxWithShutUpCatch();
+        return ResponseEntity.ok(newCourse);
+    }
+
+    @Transactional
+    @GetMapping("/same-tx-with-shut-up-catch-in-intermediate-service")
+    public ResponseEntity<Course> sameTxWithShutUpCatchInIntermediateService() {
+        Course newCourse = new Course("Smalltalk", 40);
+        entityManager.persist(newCourse);
+        intermediateService.failToInsertExistingCategoryWithSameTxWithShutUpCatch();
         return ResponseEntity.ok(newCourse);
     }
 
